@@ -78,7 +78,7 @@ else
   echo "No pinned version specified. Installing latest version." | indent
   DEB=$(ls -t "$DPKG_STUB"*.deb | head -n 1)
   DD_AGENT_VERSION=${DEB:${#DPKG_STUB}:(${#DEB}-${#DPKG_STUB}-4)}
-  echo "Latest version is \"$DD_AGENT_VERSION\". To pin this version, run: heroku config:set DD_AGENT_VERSION=$DD_AGENT_VERSION" | indent
+  echo "Latest version is \"$DD_AGENT_VERSION\". To pin this version, run: gigalixir config:set DD_AGENT_VERSION=$DD_AGENT_VERSION" | indent
 fi
 dpkg -x "$DEB" "$APT_DIR"
 

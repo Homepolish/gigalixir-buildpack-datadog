@@ -39,12 +39,12 @@ for file in "$APP_DATADOG_CONF_DIR"/*.yaml; do
 done
 
 # Add tags to the config file
-DYNOHOST="$(hostname )"
-DYNOTYPE=${DYNO%%.*}
-TAGS="tags:\n  - dyno:$DYNO\n  - dynotype:$DYNOTYPE"
+PSHOST=$HOSTNAME #$(hostname )"
+PSTYPE=${PS%%.*}
+TAGS="tags:\n  - ps:$PS\n  - pstype:$PSTYPE"
 
-if [ -n "$HEROKU_APP_NAME" ]; then
-  TAGS="$TAGS\n  - appname:$HEROKU_APP_NAME"
+if [ -n "$GIGALIXIR_APP_NAME" ]; then
+  TAGS="$TAGS\n  - appname:$GIGALIXIR_APP_NAME"
 fi
 
 # Convert comma delimited tags from env vars to yaml
@@ -72,28 +72,28 @@ fi
 # https://github.com/DataDog/datadog-agent/blob/master/pkg/config/config.go#L145
 
 if [ -z "$DD_API_KEY" ]; then
-  echo "DD_API_KEY environment variable not set. Run: heroku config:add DD_API_KEY=<your API key>"
+  echo "DD_API_KEY environment variable not set. Run: gigalixir config:set DD_API_KEY=<your API key>"
   DISABLE_DATADOG_AGENT=1
 fi
 
 if [ -z "$DD_HOSTNAME" ]; then
   if [ "$DD_DYNO_HOST" == "true" ]; then
-    # Set the hostname to dyno name and ensure rfc1123 compliance.
-    HAN="$(echo "$HEROKU_APP_NAME" | sed -e 's/[^a-zA-Z0-9-]/-/g' -e 's/^-//g')"
-    if [ "$HAN" != "$HEROKU_APP_NAME" ]; then
-      echo "WARNING: The appname \"$HEROKU_APP_NAME\" contains invalid characters. Using \"$HAN\" instead."
+    # Set the hostname to ps name and ensure rfc1123 compliance.
+    GAN="$(echo "$GIGALIXIR_APP_NAME" | sed -e 's/[^a-zA-Z0-9-]/-/g' -e 's/^-//g')"
+    if [ "$GAN" != "$GIGALIXIR_APP_NAME" ]; then
+      echo "WARNING: The appname \"$GIGALIXIR_APP_NAME\" contains invalid characters. Using \"$GAN\" instead."
     fi
 
-    D="$(echo "$DYNO" | sed -e 's/[^a-zA-Z0-9.-]/-/g' -e 's/^-//g')"
-    export DD_HOSTNAME="$HAN.$D"
+    D="$(echo "$PS" | sed -e 's/[^a-zA-Z0-9.-]/-/g' -e 's/^-//g')"
+    export DD_HOSTNAME="$GAN.$D"
   else
-    # Set the hostname to the dyno host
-    DD_HOSTNAME="$(echo "$DYNOHOST" | sed -e 's/[^a-zA-Z0-9-]/-/g' -e 's/^-//g')"
+    # Set the hostname to the ps host
+    DD_HOSTNAME="$(echo "$PSHOST" | sed -e 's/[^a-zA-Z0-9-]/-/g' -e 's/^-//g')"
     export DD_HOSTNAME
   fi
 else
   # Generate a warning about DD_HOSTNAME deprecation.
-  echo "WARNING: DD_HOSTNAME is deprecated. Setting this environment variable may result in metrics errors. To remove it, run: heroku config:unset DD_HOSTNAME"
+  echo "WARNING: DD_HOSTNAME is deprecated. Setting this environment variable may result in metrics errors. To remove it, run: gigalixir config:unset DD_HOSTNAME"
 fi
 
 # Ensure all check and librariy locations are findable in the Python path.

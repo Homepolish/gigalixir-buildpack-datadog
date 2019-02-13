@@ -1,41 +1,44 @@
 ---
-title: Datadog Heroku Buildpack
+title: Datadog Gigalixir Buildpack
 kind: documentation
 aliases:
-- /developers/faq/how-do-i-collect-metrics-from-heroku-with-datadog
+- /developers/faq/how-do-i-collect-metrics-from-gigalixir-with-datadog
 ---
 
-This [Heroku buildpack][1] installs the Datadog Agent in your Heroku Dyno to collect system metrics, custom application metrics, and traces. To collect custom application metrics or traces, include the language appropriate [DogStatsD or Datadog APM library][2] in your application.
+This [buildpack][1] installs the Datadog Agent in your Gigalixir container to collect system metrics,
+custom application metrics, and traces. To collect custom application metrics or traces, include the language 
+appropriate [DogStatsD or Datadog APM library][2] in your application.
 
 ## Installation
 
 To add this buildpack to your project, as well as set the required environment variables:
 
 ```shell
-cd <HEROKU_PROJECT_ROOT_FOLDER>
+cd <GIGALIXIR_PROJECT_ROOT_FOLDER>
 
 # If this is a new Heroku project
-heroku create
-
 # Add the appropriate language-specific buildpack. For example:
-heroku buildpacks:add heroku/ruby
-
-# Enable Heroku Labs Dyno Metadata
-heroku labs:enable runtime-dyno-metadata -a $(heroku apps:info|grep ===|cut -d' ' -f2)
+cat > .buildpacks <<EOF
+https://github.com/gigalixir/gigalixir-buildpack-clean-cache.git
+https://github.com/HashNuke/heroku-buildpack-elixir
+https://github.com/gjaldon/heroku-buildpack-phoenix-static
+https://github.com/gigalixir/gigalixir-buildpack-distillery.git
+EOF
 
 # Add this buildpack and set your Datadog API key
-heroku buildpacks:add --index 1 https://github.com/DataDog/heroku-buildpack-datadog.git
-heroku config:add DD_API_KEY=<DATADOG_API_KEY>
+ex -sc '1i|https://github.com/Homepolish/gigalixir-buildpack-datadog.git' -cx .buildpacks
+gigalixir config:set DD_API_KEY=<DATADOG_API_KEY>
 
-# Deploy to Heroku
-git push heroku master
+# Deploy to Gigalixir
+git push gigalixir master
 ```
 
 Replace `<DATADOG_API_KEY>` with your [Datadog API key][3].
 
 Once complete, the Datadog Agent is started automatically when each Dyno starts.
 
-The Datadog Agent provides a listening port on `8125` for statsd/dogstatsd metrics and events. Traces are collected on port `8126`.
+The Datadog Agent provides a listening port on `8125` for statsd/dogstatsd metrics and events. 
+Traces are collected on port `8126`.
 
 ## Configuration
 
@@ -44,9 +47,9 @@ In addition to the environment variables shown above, there are a number of othe
 | Setting                      | Description|
 | ---------------------------- | ------------------------------ |
 | `DD_API_KEY`                 | *Required.* Your API key is available from the [Datadog API Integrations][4] page. Note that this is the *API* key, not the application key.|
-| `DD_HOSTNAME`                | *Optional.* **WARNING**: Setting the hostname manually may result in metrics continuity errors. It is recommended that you do *not* set this variable. Because Dyno hosts are ephemeral it is recommended that you monitor based on the tags `dynoname` or `appname`.|
-| `DD_DYNO_HOST`               | *Optional.* Set to `true` to use the Dyno name (e.g. `web.1` or `run.1234`) as the hostname. See the [hostname section](#hostname) below for more information. Defaults to `false`|
-| `DD_TAGS`                    | *Optional.* Sets additional tags provided as a space-delimited string. For example, `heroku config:set DD_TAGS="simple-tag-0 tag-key-1:tag-value-1"`. The buildpack automatically adds the tags `dyno` and `dynohost` which represent the Dyno name (e.g. web.1) and host ID (e.g. 33f232db-7fa7-461e-b623-18e60944f44f) respectively. See the ["Guide to tagging"][5] for more information.|
+| `DD_HOSTNAME`                | *Optional.* **WARNING**: Setting the hostname manually may result in metrics continuity errors. It is recommended that you do *not* set this variable. Because process hosts are ephemeral it is recommended that you monitor based on the tags `psname` or `appname`.|
+| `DD_DYNO_HOST`               | *Optional.* Set to `true` to use the process name (e.g. `web.1`) as the hostname. See the [hostname section](#hostname) below for more information. Defaults to `false`|
+| `DD_TAGS`                    | *Optional.* Sets additional tags provided as a space-delimited string. For example, `gigalixir config:set DD_TAGS="simple-tag-0 tag-key-1:tag-value-1"`. The buildpack automatically adds the tags `ps` and `pstype` which represent the Dyno name (e.g. web.1) and (e.g. web) respectively. The tag `appname` (e.g. my_app) will also be set if present. See the ["Guide to tagging"][5] for more information.|
 | `DD_HISTOGRAM_PERCENTILES`   | *Optional.* Optionally set additional percentiles for your histogram metrics. See [How to graph percentiles][6].|
 | `DISABLE_DATADOG_AGENT`      | *Optional.* When set, the Datadog Agent does not run.|
 | `DD_APM_ENABLED`             | *Optional.* Trace collection is enabled by default. Set this to `false` to disable trace collection.|
@@ -58,9 +61,9 @@ For additional documentation, refer to the [Datadog Agent documentation][9].
 
 ## Hostname
 
-Heroku Dynos are ephemeral—they can move to different host machines whenever new code is deployed, configuration changes are made, or resouce needs/availability changes. This makes Heroku flexible and responsive, but can potentially lead to a high number of reported hosts in Datadog. Datadog bills on a per-host basis, and the buildpack default is to report actual hosts, which can lead to higher than expected costs.
+Gigalixir containers are ephemeral—they can move to different host machines whenever new code is deployed, configuration changes are made, or resouce needs/availability changes. This makes Gigalixir flexible and responsive, but can potentially lead to a high number of reported hosts in Datadog. Datadog bills on a per-host basis, and the buildpack default is to report actual hosts, which can lead to higher than expected costs.
 
-Depending on your use case, you may want to set your hostname so that hosts are aggregated and report a lower number.  To do this, Set `DD_DYNO_HOST` to `true`. This will cause the Agent to report the hostname as the app and Dyno name (e.g. `appname.web.1` or `appname.run.1234`) and your host count will closely match your Dyno usage. One drawback is that you may see some metrics continuity errors whenever a Dyno is cycled.
+Depending on your use case, you may want to set your hostname so that hosts are aggregated and report a lower number.  To do this, Set `DD_DYNO_HOST` to `true`. This will cause the Agent to report the hostname as the app and Dyno name (e.g. `appname.web.1` or `appname.run.1234`) and your host count will closely match your Dyno usage. One drawback is that you may see some metrics continuity errors whenever an application is cycled.
 
 ## Files Locations
 
@@ -88,9 +91,9 @@ instances:
 
 During the Dyno start up, your YAML files are copied to the appropriate Datadog Agent configuration directories.
 
-## Heroku Log Collection
+## Gigalixir Log Collection
 
-[See the dedicated guide to send your Heroku logs to Datadog][16]
+[See the dedicated guide to send your logs to Datadog][16]
 
 ## Prerun script
 
@@ -102,11 +105,11 @@ The example below demonstrates a few of the things you can do in the `prerun.sh`
 #!/usr/bin/env bash
 
 # Disable the Datadog Agent based on Dyno type
-if [ "$DYNOTYPE" == "run" ]; then
+if [ "$PSTYPE" == "run" ]; then
   DISABLE_DATADOG_AGENT="true"
 fi
 
-# Update the Postgres configuration from above using the Heroku application environment variable
+# Update the Postgres configuration from above using the Gigalixir application environment variable
 if [ -n "$DATABASE_URL" ]; then
   POSTGREGEX='^postgres://([^:]+):([^@]+)@([^:]+):([^/]+)/(.*)$'
   if [[ $DATABASE_URL =~ $POSTGREGEX ]]; then
@@ -121,15 +124,17 @@ fi
 
 ## Unsupported
 
-Heroku buildpacks cannot be used with Docker images. To build a Docker image with Datadog, reference the [Datadog Agent docker files][12].
+Gigalixir buildpacks cannot be used with Docker images. To build a Docker image with Datadog, reference the [Datadog Agent docker files][12].
 
-It is not possible to send logs from Heroku to Datadog using this buildpack.
+It is not possible to send logs from Gigalixir to Datadog using this buildpack.
 
 ## Contributing
 
-[See the contributing documentation to learn how to open an issue or PR to the Heroku-buildpack-datadog repository][13]
+[See the contributing documentation to learn how to open an issue or PR to the gigalixir-buildpack-datadog repository][13]
 
 ## History
+
+This has been ported from the [DataDog heroku-buildpack-datadog project][17]. It has been adapted for the Gigalixir platform.
 
 Earlier versions of this project were forked from the [miketheman heroku-buildpack-datadog project][14]. It was largely rewritten for Datadog's Agent version 6. Changes and more information can be found in the [changelog][15].
 
@@ -144,7 +149,8 @@ Earlier versions of this project were forked from the [miketheman heroku-buildpa
 [10]: https://docs.datadoghq.com/integrations/postgres
 [11]: https://devcenter.heroku.com/articles/log-drains#https-drains
 [12]: https://github.com/DataDog/datadog-agent/tree/master/Dockerfiles
-[13]: https://github.com/DataDog/heroku-buildpack-datadog/blob/master/CONTRIBUTING.md
+[13]: https://github.com/Homepolish/gigalixir-buildpack-datadog/blob/master/CONTRIBUTING.md
 [14]: https://github.com/miketheman/heroku-buildpack-datadog
 [15]: https://github.com/DataDog/heroku-buildpack-datadog/blob/master/CHANGELOG.md
 [16]: https://docs.datadoghq.com/logs/guide/collect-heroku-logs
+[17]: https://github.com/DataDog/heroku-buildpack-datadog
