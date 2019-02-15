@@ -1,10 +1,3 @@
----
-title: Datadog Gigalixir Buildpack
-kind: documentation
-aliases:
-- /developers/faq/how-do-i-collect-metrics-from-gigalixir-with-datadog
----
-
 This [buildpack][1] installs the Datadog Agent in your Gigalixir container to collect system metrics,
 custom application metrics, and traces. To collect custom application metrics or traces, include the language 
 appropriate [DogStatsD or Datadog APM library][2] in your application.
@@ -103,7 +96,45 @@ heroku config:add DD_LOG_LEVEL=ERROR
 
 ## Gigalixir Log Collection
 
-[See the dedicated guide to send your logs to Datadog][16]
+### Collect Heroku logs
+**This log integration is currently in public beta**
+
+Gigalixir provides 3 types of logs:
+
+- App Logs: output from the application you pushed on the platform.
+- System Logs: messages about actions taken by the Heroku platform infrastructure on behalf of your app.
+- API Logs: administrative questions implemented by you and other developers working on your app.
+
+Gigalixir’s HTTP/S drains buffer log messages and submit batches of messages to an HTTPS endpoint via a POST request.
+The POST body contains Syslog formatted messages, framed using the Syslog TCP protocol octet counting framing method.
+The Datadog HTTP API implements and understands the Logplex standard defined by the content-header application/logplex-1.
+
+To send all these logs to Datadog:
+
+- Connect to your Gigalixir project.
+- Set up the HTTPS drain with the following command:
+
+**US Site**
+```
+gigalixir drains:add 'https://http-intake.logs.datadoghq.com/v1/input/<DD_API_KEY>?ddsource=gigalixir&service=<SERVICE>&host=<HOST>' -a <APPLICATION_NAME>
+```
+
+**EU Site**
+```
+gigalixir drains:add 'https://http-intake.logs.datadoghq.eu/v1/input/<DD_API_KEY>?ddsource=gigalixir&service=<SERVICE>&host=<HOST>' -a <APPLICATION_NAME>
+```
+
+- Replace `<DD_API_KEY>` with your Datadog API Key.
+- Replace `<SERVICE>` with your service name (i.e. the Elixir application name).
+- Replace `<APPLICATION_NAME>` and `<HOST>` with your Gigalixir application name.
+
+> Note: Per the host section, metrics and traces set the default host name to the ps name. 
+
+It is not yet possible to dynamically set the PS name as the hostname for logs. For now, to correlate between metrics, traces, and logs the `ps` and `pstype` tags can be used.
+
+#### Custom attributes
+
+Add custom attributes to logs from your application by appending the URL in the drain as follows: `&attribute_name=<VALUE>`
 
 ## Prerun script
 
@@ -136,15 +167,13 @@ fi
 
 Gigalixir buildpacks cannot be used with Docker images. To build a Docker image with Datadog, reference the [Datadog Agent docker files][12].
 
-It is not possible to send logs from Gigalixir to Datadog using this buildpack.
-
 ## Contributing
 
 [See the contributing documentation to learn how to open an issue or PR to the gigalixir-buildpack-datadog repository][13]
 
 ## History
 
-This has been ported from the [DataDog heroku-buildpack-datadog project][17]. It has been adapted for the Gigalixir platform.
+This has been ported from the [DataDog heroku-buildpack-datadog project][16]. It has been adapted for the Gigalixir platform.
 
 Earlier versions of this project were forked from the [miketheman heroku-buildpack-datadog project][14]. It was largely rewritten for Datadog's Agent version 6. Changes and more information can be found in the [changelog][15].
 
@@ -162,5 +191,4 @@ Earlier versions of this project were forked from the [miketheman heroku-buildpa
 [13]: https://github.com/Homepolish/gigalixir-buildpack-datadog/blob/master/CONTRIBUTING.md
 [14]: https://github.com/miketheman/heroku-buildpack-datadog
 [15]: https://github.com/DataDog/heroku-buildpack-datadog/blob/master/CHANGELOG.md
-[16]: https://docs.datadoghq.com/logs/guide/collect-heroku-logs
-[17]: https://github.com/DataDog/heroku-buildpack-datadog
+[16]: https://github.com/DataDog/heroku-buildpack-datadog
