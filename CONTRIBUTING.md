@@ -4,27 +4,18 @@ This project is open source (Apache 2 License), which means we're happy for you 
 
 ### Submitting issues
 
-* If you think you've found an issue, please search the [project issues](https://github.com/DataDog/heroku-buildpack-datadog/issues) first.
-* If you can't find anything useful, please contact our [support team](http://docs.datadoghq.com/help/) and send a flare. To send a flare, you'll need get to your Dyno's command line:
+* If you think you've found an issue, please search the [project issues](https://github.com/Homepolish/gigalixir-buildpack-datadog/issues) first.
+* If you can't find anything useful, please contact Datadog's [support team](http://docs.datadoghq.com/help/) and send a flare. To send a flare, you'll need get to the process' command line:
 
   ```shell
   # From your project directory:
-  heroku run bash
+  gigalixir ps:ssh
 
-  # Once your Dyno has started and you are at the command line, send a flare:
+  # Once your process has started and you are at the command line, send a flare:
   agent -c /app/.apt/etc/datadog-agent/datadog.yaml flare
   ```
 
-  It can also be helpful to send logs from your running Dyno:
-  ```shell
-  # Download Datadog Agent logs
-  heroku ps:copy /app/.apt/var/log/datadog/datadog.log --dyno=<YOUR DYNO NAME>
-
-  # Download Datadog Trace Agent logs
-  heroku ps:copy /app/.apt/var/log/datadog/datadog-apm.log --dyno=<YOUR DYNO NAME>
-  ```
-
-* Finally, you can open [a GitHub issue](https://github.com/DataDog/heroku-buildpack-datadog/issues).
+* Finally, you can open [a GitHub issue](https://github.com/Homepolish/gigalixir-buildpack-datadog/issues).
 
 ### Pull requests
 

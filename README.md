@@ -33,6 +33,59 @@ Once complete, the Datadog Agent is started automatically when each Dyno starts.
 The Datadog Agent provides a listening port on `8125` for statsd/dogstatsd metrics and events. 
 Traces are collected on port `8126`.
 
+### Distillery
+
+This buildpack is meant to be used with Distillery and requires configuration of the release. This includes
+the use of the [Datadog Distillery Plugin](https://github.com/Homepolish/datadog_distillery_plugin).
+
+Make sure to add the plugin to your `mix.exs` file.
+
+```elixir
+def deps do
+  [
+    {:distillery, "~> 2.0"},
+    {:datadog_distillery_plugin, "~> 0.1.0"}
+  ]
+end
+```
+
+Set the following in the `rel/config.exs`:
+
+```elixir
+environment :prod do
+  # The plugin for recompiling the slug with the Datadog agent
+  plugin(Mix.Releases.DatadogPlugin)
+
+  set(
+    overlays: [
+      # The app datadog dir; used for configuration of integrations
+      {:copy, "datadog", "datadog"},
+      # The datadog agent script
+      # This cannot be run until after the web process is started
+      {:copy, ".profile.d/datadog.sh", "datadog/run"}
+    ]
+  )
+end
+```
+
+The last piece is to start the agent. This is best achieved from a pre-start hook, again in `rel/config.exs`.
+
+```elixir
+environment :prod do
+  set(pre_start_hooks: "rel/hooks/pre_start.d")
+end
+```
+
+**rel/hooks/pre_start.d/01.datadog.sh**
+```bash
+#!/usr/bin/env bash
+
+set -e
+
+echo "==> Starting Datadog agent"
+"${RELEASE_ROOT_DIR}"/datadog/run
+```
+
 ## Configuration
 
 In addition to the environment variables shown above, there are a number of others you can set:
@@ -186,9 +239,8 @@ Earlier versions of this project were forked from the [miketheman heroku-buildpa
 [8]: https://docs.datadoghq.com/tracing/setup/?tab=agent630#trace-search
 [9]: https://docs.datadoghq.com/agent
 [10]: https://docs.datadoghq.com/integrations/postgres
-[11]: https://devcenter.heroku.com/articles/log-drains#https-drains
 [12]: https://github.com/DataDog/datadog-agent/tree/master/Dockerfiles
 [13]: https://github.com/Homepolish/gigalixir-buildpack-datadog/blob/master/CONTRIBUTING.md
 [14]: https://github.com/miketheman/heroku-buildpack-datadog
-[15]: https://github.com/DataDog/heroku-buildpack-datadog/blob/master/CHANGELOG.md
+[15]: https://github.com/Homepolish/gigalixir-buildpack-datadog/blob/master/CHANGELOG.md
 [16]: https://github.com/DataDog/heroku-buildpack-datadog
