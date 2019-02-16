@@ -43,6 +43,10 @@ PSHOST=$HOSTNAME #$(hostname )"
 PSTYPE=${PS%%.*}
 TAGS="tags:\n  - ps:$PS\n  - pstype:$PSTYPE"
 
+if [ -n "$APP_NAME" ]; then
+  TAGS="$TAGS\n  - hostname:$APP_NAME"
+fi
+
 if [ -n "$GIGALIXIR_APP_NAME" ]; then
   TAGS="$TAGS\n  - appname:$GIGALIXIR_APP_NAME"
 fi
@@ -78,6 +82,16 @@ fi
 
 if [ -z "$DD_HOSTNAME" ]; then
   if [ "$DD_DYNO_HOST" == "true" ]; then
+    # Set the hostname to app name and ensure rfc1123 compliance.
+    AN="$(echo "$APP_NAME" | sed -e 's/[^a-zA-Z0-9-]/-/g' -e 's/^-//g')"
+    if [ "$AN" != "$APP_NAME" ]; then
+      echo "WARNING: The hostname \"$APP_NAME\" contains invalid characters. Using \"$AN\" instead."
+    fi
+
+    # Scaling in Gigalixir is done through Kubernetes, so we want to count replicas
+    # XXX: There is no replica index yet; discussing solution with Gigalixir
+    R=1
+
     # Set the hostname to ps name and ensure rfc1123 compliance.
     GAN="$(echo "$GIGALIXIR_APP_NAME" | sed -e 's/[^a-zA-Z0-9-]/-/g' -e 's/^-//g')"
     if [ "$GAN" != "$GIGALIXIR_APP_NAME" ]; then
@@ -85,7 +99,7 @@ if [ -z "$DD_HOSTNAME" ]; then
     fi
 
     D="$(echo "$PS" | sed -e 's/[^a-zA-Z0-9.-]/-/g' -e 's/^-//g')"
-    export DD_HOSTNAME="$GAN.$D"
+    export DD_HOSTNAME="$AN.$R.$GAN.$D"
   else
     # Set the hostname to the ps host
     DD_HOSTNAME="$(echo "$PSHOST" | sed -e 's/[^a-zA-Z0-9-]/-/g' -e 's/^-//g')"

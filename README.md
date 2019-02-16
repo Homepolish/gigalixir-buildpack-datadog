@@ -28,7 +28,7 @@ git push gigalixir master
 
 Replace `<DATADOG_API_KEY>` with your [Datadog API key][3].
 
-Once complete, the Datadog Agent is started automatically when each Dyno starts.
+Once complete, the Datadog Agent is started automatically when each replica starts.
 
 The Datadog Agent provides a listening port on `8125` for statsd/dogstatsd metrics and events. 
 Traces are collected on port `8126`.
