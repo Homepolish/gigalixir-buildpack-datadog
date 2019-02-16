@@ -41,7 +41,7 @@ done
 # Add tags to the config file
 PSHOST=$HOSTNAME #$(hostname )"
 PSTYPE=${PS%%.*}
-TAGS="tags:\n  - ps:$PS\n  - pstype:$PSTYPE"
+TAGS="tags:\n  - ps:$PS\n  - pstype:$PSTYPE\n  - server_name:$HOSTNAME"
 
 if [ -n "$APP_NAME" ]; then
   TAGS="$TAGS\n  - hostname:$APP_NAME"
