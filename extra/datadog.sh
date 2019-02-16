@@ -41,14 +41,14 @@ done
 # Add tags to the config file
 PSHOST=$HOSTNAME #$(hostname )"
 PSTYPE=${PS%%.*}
-TAGS="tags:\n  - ps:$PS\n  - pstype:$PSTYPE\n  - server_name:$HOSTNAME"
+TAGS="tags:\n  - ps:$PS\n  - pstype:$PSTYPE\n  - agent-hostname:$HOSTNAME"
 
 if [ -n "$APP_NAME" ]; then
-  TAGS="$TAGS\n  - hostname:$APP_NAME"
+  TAGS="$TAGS\n  - appname:$APP_NAME"
 fi
 
 if [ -n "$GIGALIXIR_APP_NAME" ]; then
-  TAGS="$TAGS\n  - appname:$GIGALIXIR_APP_NAME"
+  TAGS="$TAGS\n  - servicename:$GIGALIXIR_APP_NAME"
 fi
 
 # Convert comma delimited tags from env vars to yaml
