@@ -88,9 +88,9 @@ if [ -z "$DD_HOSTNAME" ]; then
       echo "WARNING: The hostname \"$APP_NAME\" contains invalid characters. Using \"$AN\" instead."
     fi
 
-    # Scaling in Gigalixir is done through Kubernetes, so we want to count replicas
-    # XXX: There is no replica index yet; discussing solution with Gigalixir
-    R=1
+    # Scaling in Gigalixir is done through Kubernetes, so we want to count replicas 
+    # This is stored as HOST_INDEX   
+    R=$HOST_INDEX
 
     # Set the hostname to ps name and ensure rfc1123 compliance.
     GAN="$(echo "$GIGALIXIR_APP_NAME" | sed -e 's/[^a-zA-Z0-9-]/-/g' -e 's/^-//g')"
