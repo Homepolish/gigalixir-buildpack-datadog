@@ -38,17 +38,16 @@ for file in "$APP_DATADOG_CONF_DIR"/*.yaml; do
   cp "$file" "$DD_CONF_DIR/conf.d/${filename}.d/conf.yaml"
 done
 
+PSHOST=$(hostname )
 # Add tags to the config file
-PSHOST=$HOSTNAME #$(hostname )"
-PSTYPE=${PS%%.*}
-TAGS="tags:\n  - ps:$PS\n  - pstype:$PSTYPE\n  - agent-hostname:$HOSTNAME"
+TAGS="tags:\n  - procid:${PSHOST}"
 
 if [ -n "$APP_NAME" ]; then
   TAGS="$TAGS\n  - appname:$APP_NAME"
 fi
 
 if [ -n "$GIGALIXIR_APP_NAME" ]; then
-  TAGS="$TAGS\n  - servicename:$GIGALIXIR_APP_NAME"
+  TAGS="$TAGS\n  - service:$GIGALIXIR_APP_NAME"
 fi
 
 # Convert comma delimited tags from env vars to yaml
@@ -97,9 +96,8 @@ if [ -z "$DD_HOSTNAME" ]; then
     if [ "$GAN" != "$GIGALIXIR_APP_NAME" ]; then
       echo "WARNING: The appname \"$GIGALIXIR_APP_NAME\" contains invalid characters. Using \"$GAN\" instead."
     fi
-
-    D="$(echo "$PS" | sed -e 's/[^a-zA-Z0-9.-]/-/g' -e 's/^-//g')"
-    export DD_HOSTNAME="$AN.$R.$GAN.$D"
+  
+    export DD_HOSTNAME="$AN.$R.$GAN"
   else
     # Set the hostname to the ps host
     DD_HOSTNAME="$(echo "$PSHOST" | sed -e 's/[^a-zA-Z0-9-]/-/g' -e 's/^-//g')"

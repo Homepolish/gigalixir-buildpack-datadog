@@ -9,7 +9,7 @@ To add this buildpack to your project, as well as set the required environment v
 ```shell
 cd <GIGALIXIR_PROJECT_ROOT_FOLDER>
 
-# If this is a new Heroku project
+# If this is a new Gigalixir project
 # Add the appropriate language-specific buildpack. For example:
 cat > .buildpacks <<EOF
 https://github.com/gigalixir/gigalixir-buildpack-clean-cache.git
@@ -20,7 +20,7 @@ EOF
 
 # Add this buildpack and set your Datadog API key
 ex -sc '1i|https://github.com/Homepolish/gigalixir-buildpack-datadog.git' -cx .buildpacks
-gigalixir config:set DD_API_KEY=<DATADOG_API_KEY>
+gigalixir config:set DD_API_KEY=<DATADOG_API_KEY> -a <APPLICATION_NAME>
 
 # Deploy to Gigalixir
 git push gigalixir master
@@ -62,7 +62,9 @@ environment :prod do
       {:copy, "datadog", "datadog"},
       # The datadog agent script
       # This cannot be run until after the web process is started
-      {:copy, ".profile.d/datadog.sh", "datadog/run"}
+      {:copy, ".profile.d/datadog.sh", "datadog/run"},
+      # Set up environment for running `$ agent` from cli
+      {:copy, ".profile.d/agent_pre.sh", ".profile.d/agent_pre.sh"}
     ]
   )
 end
@@ -109,7 +111,7 @@ For additional documentation, refer to the [Datadog Agent documentation][9].
 
 Gigalixir containers are ephemeral—they can move to different host machines whenever new code is deployed, configuration changes are made, or resouce needs/availability changes. This makes Gigalixir flexible and responsive, but can potentially lead to a high number of reported hosts in Datadog. Datadog bills on a per-host basis, and the buildpack default is to report actual hosts, which can lead to higher than expected costs.
 
-Depending on your use case, you may want to set your hostname so that hosts are aggregated and report a lower number.  To do this, Set `DD_DYNO_HOST` to `true`. This will cause the Agent to report the hostname as the app and Dyno name (e.g. `appname.web.1` or `appname.run.1234`) and your host count will closely match your Dyno usage. One drawback is that you may see some metrics continuity errors whenever an application is cycled.
+Depending on your use case, you may want to set your hostname so that hosts are aggregated and report a lower number.  To do this, Set `DD_DYNO_HOST` to `true`. This will cause the Agent to report the hostname as the app and Dyno name (e.g. `appname.1.service`) and your host count will closely match your Dyno usage. One drawback is that you may see some metrics continuity errors whenever an application is cycled.
 
 ## File locations
 
@@ -144,18 +146,18 @@ In some cases, you may want to limit the amount of logs the Datadog buildpack is
 To limit the log output of the buildpack, set the `DD_LOG_LEVEL` environment variable to one of the following: `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `CRITICAL`, `OFF`.
 
 ```
-heroku config:add DD_LOG_LEVEL=ERROR
+gigalixir config:set DD_LOG_LEVEL=ERROR -a <APPLICATION_NAME>
 ```
 
 ## Gigalixir Log Collection
 
-### Collect Heroku logs
+### Collect Gigalixir logs
 **This log integration is currently in public beta**
 
 Gigalixir provides 3 types of logs:
 
 - App Logs: output from the application you pushed on the platform.
-- System Logs: messages about actions taken by the Heroku platform infrastructure on behalf of your app.
+- System Logs: messages about actions taken by the Gigalixir platform infrastructure on behalf of your app.
 - API Logs: administrative questions implemented by you and other developers working on your app.
 
 Gigalixir’s HTTP/S drains buffer log messages and submit batches of messages to an HTTPS endpoint via a POST request.
@@ -181,9 +183,11 @@ gigalixir drains:add 'https://http-intake.logs.datadoghq.eu/v1/input/<DD_API_KEY
 - Replace `<SERVICE>` with your service name (i.e. the Elixir application name).
 - Replace `<APPLICATION_NAME>` and `<HOST>` with your Gigalixir application name.
 
-> Note: Per the host section, metrics and traces set the default host name to the ps name. 
+> Note: Per the host section, metrics and traces set the default host name to `$(hostname)`. 
 
-It is not yet possible to dynamically set the PS name as the hostname for logs. For now, to correlate between metrics, traces, and logs the `ps` and `pstype` tags can be used.
+It is not yet possible to dynamically set the host name as the process hostname for logs. For now, to correlate between metrics, traces, and logs the `procid` tag can be used.
+
+> Note: Tags can be added using the `ddtags` attribute; i.e. `&ddtags=env:staging`
 
 #### Custom attributes
 
@@ -214,6 +218,18 @@ if [ -n "$DATABASE_URL" ]; then
     sed -i "s/<YOUR DBNAME>/${BASH_REMATCH[5]}/" "$DD_CONF_DIR/conf.d/postgres.d/conf.yaml"
   fi
 fi
+```
+
+## Support
+
+When support is required, Datadog will often request some action be done with the `agent` command. To facilitate these requests
+the agent can be accessed from an SSH session.
+
+The ENV vars `$DD_PYTHONPATH` and `$DATADOG_CONF` are exported for convenience.
+
+```
+$ gigalixir ps:ssh -a <APPLICATION_NAME>
+$ PYTHONPATH=$DD_PYTHONPATH agent <RUN_COMMAND> -c $DATADOG_CONF
 ```
 
 ## Unsupported
