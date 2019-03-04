@@ -108,6 +108,11 @@ else
   echo "WARNING: DD_HOSTNAME is deprecated. Setting this environment variable may result in metrics errors. To remove it, run: gigalixir config:unset DD_HOSTNAME"
 fi
 
+# Disable core checks (these read the host, not the dyno).
+if [ "$DD_DISABLE_HOST_METRICS" == "true" ]; then
+  find "$DD_CONF_DIR"/conf.d -name "conf.yaml.default" -exec mv {} {}_disabled \;
+fi
+
 # Ensure all check and librariy locations are findable in the Python path.
 DD_PYTHONPATH="$DD_DIR/embedded/lib/python2.7"
 # Recursively add packages to python path.
